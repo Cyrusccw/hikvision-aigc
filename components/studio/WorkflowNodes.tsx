@@ -23,6 +23,13 @@ type WorkflowNodeData = {
   selected?: boolean;
   shotIndex?: number;
   variantCount?: number;
+  prompt?: string;
+  videoPrompt?: string;
+  briefText?: string;
+  shotCount?: number;
+  totalDuration?: number;
+  language?: string;
+  timeline?: Array<{ label: string; duration: number }>;
 };
 
 type WorkflowNode = Node<WorkflowNodeData>;
@@ -64,18 +71,16 @@ function Shell({
       </div>
       {data.description && <p className="workflow-node__description">{data.description}</p>}
       {children}
-      {data.meta && (
+      {data.meta && data.meta.length > 0 && (
         <div className="workflow-node__meta">
-          {data.meta.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
+          {data.meta.map((item) => <span key={item}>{item}</span>)}
         </div>
       )}
       {data.actionLabel && (
-        <button className="node-action nodrag" type="button">
+        <div className="node-action nodrag">
           <Sparkles size={13} />
           {data.actionLabel}
-        </button>
+        </div>
       )}
       {source && <Handle type="source" position={Position.Right} className="workflow-handle" />}
     </div>
@@ -88,8 +93,8 @@ export function ProductNode({ data }: NodeProps<WorkflowNode>) {
       <div className="product-preview">
         <div className="product-preview__image"><ImageIcon size={22} /></div>
         <div>
-          <b>Product source</b>
-          <span>URL · Images · Spec/PDF</span>
+          <b>{data.status === 'approved' ? 'Product knowledge ready' : 'Product source'}</b>
+          <span>{data.meta?.[0] ?? 'URL · Images · Spec/PDF'}</span>
         </div>
       </div>
     </Shell>
@@ -99,18 +104,21 @@ export function ProductNode({ data }: NodeProps<WorkflowNode>) {
 export function BriefNode({ data }: NodeProps<WorkflowNode>) {
   return (
     <Shell icon={<Lightbulb size={17} />} data={data} target={false}>
-      <div className="brief-quote">“Create a 15s premium product film that shows reliable performance in a real business scene.”</div>
+      <div className="brief-quote">“{data.briefText || data.description || 'Describe the product video you want to create.'}”</div>
     </Shell>
   );
 }
 
 export function StoryboardNode({ data }: NodeProps<WorkflowNode>) {
+  const shotCount = data.shotCount ?? Number.parseInt(data.meta?.[0] ?? '0', 10) || 0;
+  const totalDuration = data.totalDuration ?? Number.parseInt(data.meta?.[1] ?? '0', 10) || 0;
+  const language = data.language ?? data.meta?.[2] ?? '—';
   return (
     <Shell icon={<Clapperboard size={17} />} data={data} wide>
       <div className="storyboard-summary">
-        <div><b>3</b><span>Shots</span></div>
-        <div><b>15s</b><span>Total</span></div>
-        <div><b>EN</b><span>Language</span></div>
+        <div><b>{shotCount || '—'}</b><span>Shots</span></div>
+        <div><b>{totalDuration ? `${totalDuration}s` : '—'}</b><span>Total</span></div>
+        <div><b>{language}</b><span>Language</span></div>
       </div>
     </Shell>
   );
@@ -120,11 +128,11 @@ export function ShotNode({ data }: NodeProps<WorkflowNode>) {
   return (
     <Shell icon={<FileText size={17} />} data={data} wide>
       <div className="shot-grid">
-        <div><span>Scene</span><b>{data.meta?.[0] ?? 'Office lobby'}</b></div>
-        <div><span>Camera</span><b>{data.meta?.[1] ?? 'Slow dolly-in'}</b></div>
+        <div><span>Scene</span><b>{data.meta?.[0] ?? 'Not set'}</b></div>
+        <div><span>Camera</span><b>{data.meta?.[1] ?? 'Not set'}</b></div>
       </div>
       <div className="shot-pipeline">
-        <div><ImageIcon size={14} /><span>Reference image</span><em>Generate</em></div>
+        <div><ImageIcon size={14} /><span>Reference image</span><em>Prompt ready</em></div>
         <div className="shot-pipeline__arrow">→</div>
         <div><Video size={14} /><span>Shot video</span><em>{data.variantCount ?? 0} variants</em></div>
       </div>
@@ -137,7 +145,7 @@ export function ImageNode({ data }: NodeProps<WorkflowNode>) {
     <Shell icon={<ImageIcon size={17} />} data={data}>
       <div className="media-placeholder media-placeholder--image">
         <ImageIcon size={26} />
-        <span>Keyframe candidate</span>
+        <span>{data.status === 'approved' ? 'Reference selected' : 'Keyframe candidate'}</span>
       </div>
     </Shell>
   );
@@ -148,23 +156,24 @@ export function VideoNode({ data }: NodeProps<WorkflowNode>) {
     <Shell icon={<Video size={17} />} data={data}>
       <div className="media-placeholder media-placeholder--video">
         <Play size={24} />
-        <span>{data.duration ?? '5s'} preview</span>
+        <span>{data.duration ?? '—'} preview</span>
       </div>
     </Shell>
   );
 }
 
 export function FinalCutNode({ data }: NodeProps<WorkflowNode>) {
+  const timeline = data.timeline ?? [];
   return (
     <Shell icon={<Clapperboard size={17} />} data={data} source={false} wide>
-      <div className="timeline-strip">
-        <div>01 <span>5s</span></div>
-        <div>02 <span>5s</span></div>
-        <div>03 <span>5s</span></div>
+      <div className="timeline-strip timeline-strip--dynamic">
+        {timeline.length > 0 ? timeline.map((item, index) => (
+          <div key={`${item.label}-${index}`}>{item.label}<span>{item.duration}s</span></div>
+        )) : <div className="timeline-empty">Waiting for approved shots</div>}
       </div>
-      <button className="node-action node-action--dark nodrag" type="button">
+      <div className="node-action node-action--dark nodrag">
         <Play size={13} /> Merge selected shots
-      </button>
+      </div>
     </Shell>
   );
 }
