@@ -1,5 +1,5 @@
-import StudioCanvas from '@/components/studio/StudioCanvas';
+import StudioCanvasV2 from '@/components/studio/StudioCanvasV2';
 
 export default function Home() {
-  return <StudioCanvas />;
+  return <StudioCanvasV2 />;
 }
