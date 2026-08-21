@@ -110,9 +110,12 @@ export function BriefNode({ data }: NodeProps<WorkflowNode>) {
 }
 
 export function StoryboardNode({ data }: NodeProps<WorkflowNode>) {
-  const shotCount = data.shotCount ?? Number.parseInt(data.meta?.[0] ?? '0', 10) || 0;
-  const totalDuration = data.totalDuration ?? Number.parseInt(data.meta?.[1] ?? '0', 10) || 0;
+  const parsedShotCount = Number.parseInt(data.meta?.[0] ?? '0', 10);
+  const parsedDuration = Number.parseInt(data.meta?.[1] ?? '0', 10);
+  const shotCount = data.shotCount ?? (Number.isFinite(parsedShotCount) ? parsedShotCount : 0);
+  const totalDuration = data.totalDuration ?? (Number.isFinite(parsedDuration) ? parsedDuration : 0);
   const language = data.language ?? data.meta?.[2] ?? '—';
+
   return (
     <Shell icon={<Clapperboard size={17} />} data={data} wide>
       <div className="storyboard-summary">
